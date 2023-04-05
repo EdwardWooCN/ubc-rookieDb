@@ -265,6 +265,46 @@ public class TestInnerNode {
 
     @Test
     @Category(PublicTests.class)
+    public void testOverflowPuts() {
+        IntDataBox key = null;
+        RecordId rid = null;
+
+        // Add to leaf 0.
+        key = new IntDataBox(0);
+        rid = new RecordId(0, (short) 0);
+        assertEquals(Optional.empty(), inner.put(key, rid));
+        keys0.add(0, key);
+        rids0.add(0, rid);
+        checkTreeMatchesExpectations();
+
+        // Add to leaf 1.
+        key = new IntDataBox(14);
+        rid = new RecordId(14, (short) 14);
+        assertEquals(Optional.empty(), inner.put(key, rid));
+        keys1.add(3, key);
+        rids1.add(3, rid);
+        checkTreeMatchesExpectations();
+
+        // Add to leaf 2.
+        key = new IntDataBox(20);
+        rid = new RecordId(20, (short) 20);
+        assertEquals(Optional.empty(), inner.put(key, rid));
+        keys2.add(0, key);
+        rids2.add(0, rid);
+        checkTreeMatchesExpectations();
+
+        // over flow.
+        key = new IntDataBox(15);
+        rid = new RecordId(15, (short) 15);
+        assertEquals(Optional.empty(), inner.put(key, rid));
+        System.out.println(inner.toSexp());
+//        keys2.add(0, key);
+//        rids2.add(0, rid);
+//        checkTreeMatchesExpectations();
+    }
+
+    @Test
+    @Category(PublicTests.class)
     public void testRemove() {
         // Remove from leaf 0.
         inner.remove(new IntDataBox(1));

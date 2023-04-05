@@ -148,7 +148,7 @@ class LeafNode extends BPlusNode {
     public LeafNode get(DataBox key) {
         // TODO(proj2): implement
 
-        return null;
+        return this;
     }
 
     // See BPlusNode.getLeftmostLeaf.
@@ -156,7 +156,7 @@ class LeafNode extends BPlusNode {
     public LeafNode getLeftmostLeaf() {
         // TODO(proj2): implement
 
-        return null;
+        return this;
     }
 
     // See BPlusNode.put.
@@ -164,7 +164,39 @@ class LeafNode extends BPlusNode {
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
         // TODO(proj2): implement
 
-        return Optional.empty();
+        //0. precheck
+        getKey(key).ifPresent(i -> {
+            throw new BPlusTreeException("key already exists");
+        });
+
+        Optional<Pair<DataBox, Long>> res = Optional.empty();
+
+        //1. insert (key, rid) into {keys, rids}
+//        int insIdx = Collections.binarySearch(keys, key);
+//        insIdx = Math.max(insIdx, 0);
+        int insIdx = InnerNode.numLessThan(key, keys);
+        keys.add(insIdx, key);
+        rids.add(insIdx, rid);
+
+        //2. need split
+        int maxLen = metadata.getOrder() * 2;
+        if (keys.size() > maxLen) {
+            //a. build split leaf node
+            int midIdx = maxLen/2;
+            LeafNode splitLeafNode = new LeafNode(metadata, bufferManager, keys.subList(midIdx, keys.size()),
+                    rids.subList(midIdx, rids.size()), this.rightSibling, treeContext);
+
+            //b. build split key and pointer to split leaf node
+            DataBox newKey = keys.get(midIdx);
+            res = Optional.of(new Pair<>(newKey, splitLeafNode.page.getPageNum()));
+
+            //c. clear slots of this inner node.
+            keys.subList(midIdx, keys.size()).clear();
+            rids.subList(midIdx, rids.size()).clear();
+        }
+
+        sync();
+        return res;
     }
 
     // See BPlusNode.bulkLoad.
@@ -181,6 +213,7 @@ class LeafNode extends BPlusNode {
     public void remove(DataBox key) {
         // TODO(proj2): implement
 
+        sync();
         return;
     }
 

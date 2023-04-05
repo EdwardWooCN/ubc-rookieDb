@@ -257,7 +257,9 @@ public class BPlusTree {
         // Use the provided updateRoot() helper method to change
         // the tree's root if the old root splits.
 
-        return;
+        Optional<Pair<DataBox, Long>> optionalNewRoot = root.put(key, rid);
+        optionalNewRoot.ifPresent(pair -> updateRoot(new InnerNode(metadata, bufferManager,
+                Arrays.asList(pair.getFirst()), Arrays.asList(pair.getSecond()), lockContext)));
     }
 
     /**
