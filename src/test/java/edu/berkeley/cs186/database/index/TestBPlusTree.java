@@ -485,4 +485,11 @@ public class TestBPlusTree {
         assertEquals(3, InnerNode.maxOrder(pageSizeInBytes, keySchema));
         assertEquals(3, BPlusTree.maxOrder(pageSizeInBytes, keySchema));
     }
+
+    @Test
+    @Category(PublicTests.class)
+    public void testToDot() {
+        BPlusTree tree = getBPlusTree(Type.intType(), 1);
+        tree.toDotPDFFile("testToDot-tree.pdf");
+    }
 }
