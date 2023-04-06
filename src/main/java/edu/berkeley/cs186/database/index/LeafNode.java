@@ -213,6 +213,12 @@ class LeafNode extends BPlusNode {
     public void remove(DataBox key) {
         // TODO(proj2): implement
 
+        int index = keys.indexOf(key);
+        if (index == -1) {
+            return;
+        }
+        keys.remove(index);
+        rids.remove(index);
         sync();
         return;
     }
