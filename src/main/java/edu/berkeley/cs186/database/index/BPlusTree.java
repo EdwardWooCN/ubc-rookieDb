@@ -201,8 +201,8 @@ public class BPlusTree {
         LockUtil.ensureSufficientLockHeld(lockContext, LockType.NL);
 
         // TODO(proj2): Return a BPlusTreeIterator.
-
-        return Collections.emptyIterator();
+        // todo 如果是空的咋整？ 会出现null吗？
+        return new BPlusTreeIterator(root.getLeftmostLeaf());
     }
 
     /**
@@ -234,8 +234,7 @@ public class BPlusTree {
         LockUtil.ensureSufficientLockHeld(lockContext, LockType.NL);
 
         // TODO(proj2): Return a BPlusTreeIterator.
-
-        return Collections.emptyIterator();
+        return new BPlusTreeIterator(root.get(key));
     }
 
     /**
@@ -426,18 +425,38 @@ public class BPlusTree {
     private class BPlusTreeIterator implements Iterator<RecordId> {
         // TODO(proj2): Add whatever fields and constructors you want here.
 
+        private LeafNode startNode;
+        private Iterator<RecordId> leafNodeItr;
+
+        //用leaf node cstr
+        BPlusTreeIterator(LeafNode startNode) {
+            this.startNode = startNode;
+            this.leafNodeItr = this.startNode.scanAll();
+        }
+
         @Override
         public boolean hasNext() {
             // TODO(proj2): implement
+            boolean nodeItrHasNext = leafNodeItr.hasNext();
+            if (nodeItrHasNext) {
+                return true;
+            }
 
-            return false;
+            Optional<LeafNode> optionalLeafNode = startNode.getRightSibling();
+            if (!optionalLeafNode.isPresent()) {
+                return false;
+            }
+            startNode = optionalLeafNode.get();
+            leafNodeItr = startNode.scanAll();
+            //这里 应该是true 还是 hasNext(). 考虑空的list的itr的情况
+            return hasNext();
         }
 
         @Override
         public RecordId next() {
             // TODO(proj2): implement
 
-            throw new NoSuchElementException();
+            return leafNodeItr.next();
         }
     }
 }
