@@ -201,7 +201,6 @@ public class BPlusTree {
         LockUtil.ensureSufficientLockHeld(lockContext, LockType.NL);
 
         // TODO(proj2): Return a BPlusTreeIterator.
-        // todo 如果是空的咋整？ 会出现null吗？
         return new BPlusTreeIterator(root.getLeftmostLeaf());
     }
 
@@ -234,7 +233,9 @@ public class BPlusTree {
         LockUtil.ensureSufficientLockHeld(lockContext, LockType.NL);
 
         // TODO(proj2): Return a BPlusTreeIterator.
-        return new BPlusTreeIterator(root.get(key));
+
+        //只是当前叶子结点，会多拿几个
+        return new BPlusTreeIterator(root.get(key), key);
     }
 
     /**
@@ -258,7 +259,7 @@ public class BPlusTree {
 
         Optional<Pair<DataBox, Long>> optionalNewRoot = root.put(key, rid);
         optionalNewRoot.ifPresent(pair -> updateRoot(new InnerNode(metadata, bufferManager,
-                Arrays.asList(pair.getFirst()), Arrays.asList(pair.getSecond()), lockContext)));
+                Arrays.asList(pair.getFirst()), Arrays.asList(root.getPage().getPageNum(), pair.getSecond()), lockContext)));
     }
 
     /**
@@ -432,6 +433,11 @@ public class BPlusTree {
         BPlusTreeIterator(LeafNode startNode) {
             this.startNode = startNode;
             this.leafNodeItr = this.startNode.scanAll();
+        }
+
+        BPlusTreeIterator(LeafNode startNode, DataBox key) {
+            this.startNode = startNode;
+            this.leafNodeItr = this.startNode.scanGreaterEqual(key);
         }
 
         @Override

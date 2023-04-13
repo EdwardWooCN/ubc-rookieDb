@@ -185,6 +185,7 @@ class LeafNode extends BPlusNode {
             int midIdx = maxLen/2;
             LeafNode splitLeafNode = new LeafNode(metadata, bufferManager, keys.subList(midIdx, keys.size()),
                     rids.subList(midIdx, rids.size()), this.rightSibling, treeContext);
+            this.rightSibling = Optional.of(splitLeafNode.getPage().getPageNum());
 
             //b. build split key and pointer to split leaf node
             DataBox newKey = keys.get(midIdx);
@@ -422,7 +423,8 @@ class LeafNode extends BPlusNode {
         byte nodeType = buf.get();
         assert(nodeType == (byte) 1);
 
-        Optional<Long> rightSiblings = Optional.of(buf.getLong());
+        long rightSibling = buf.getLong();
+        Optional<Long> rightSiblings = rightSibling == -1 ? Optional.empty() : Optional.of(rightSibling);
 
         List<DataBox> keys = new ArrayList<>();
         List<RecordId> rids = new ArrayList<>();
