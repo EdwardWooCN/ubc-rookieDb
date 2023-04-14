@@ -172,8 +172,6 @@ class LeafNode extends BPlusNode {
         Optional<Pair<DataBox, Long>> res = Optional.empty();
 
         //1. insert (key, rid) into {keys, rids}
-//        int insIdx = Collections.binarySearch(keys, key);
-//        insIdx = Math.max(insIdx, 0);
         int insIdx = InnerNode.numLessThan(key, keys);
         keys.add(insIdx, key);
         rids.add(insIdx, rid);
@@ -206,7 +204,39 @@ class LeafNode extends BPlusNode {
             float fillFactor) {
         // TODO(proj2): implement
 
-        return Optional.empty();
+        Optional<Pair<DataBox, Long>> res = Optional.empty();
+
+        if (!data.hasNext()) {
+            return res;
+        }
+
+        //1. insert
+        Pair<DataBox, RecordId> dataBoxRecordIdPair = data.next();
+        DataBox dataBox = dataBoxRecordIdPair.getFirst();
+        RecordId recordId = dataBoxRecordIdPair.getSecond();
+        keys.add(keys.size(), dataBox);
+        rids.add(rids.size(), recordId);
+
+        //2. need split
+        int maxKeyLen = new Double(Math.ceil(metadata.getOrder() * 2 * fillFactor)).intValue();
+        if (keys.size() > maxKeyLen) {
+            //a. build split leaf node
+            LeafNode splitLeafNode = new LeafNode(metadata, bufferManager, keys.subList(maxKeyLen, keys.size()),
+                    rids.subList(maxKeyLen, rids.size()), this.rightSibling, treeContext);
+            this.rightSibling = Optional.of(splitLeafNode.getPage().getPageNum());
+
+            //b. build split key and pointer to split leaf node
+            DataBox newKey = keys.get(maxKeyLen);
+            res = Optional.of(new Pair<>(newKey, splitLeafNode.page.getPageNum()));
+
+            //c. clear slots of this inner node.
+            keys.subList(maxKeyLen, keys.size()).clear();
+            rids.subList(maxKeyLen, rids.size()).clear();
+        }
+
+        sync();
+        return res;
+
     }
 
     // See BPlusNode.remove.
