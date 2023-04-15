@@ -144,38 +144,40 @@ class InnerNode extends BPlusNode {
 
         Optional<Pair<DataBox, Long>> res = Optional.empty();
 
-        //1. bulk load right most child node
-        BPlusNode rightMostChildNode = getChild(children.size() - 1);
-        Optional<Pair<DataBox, Long>> optionalPair = rightMostChildNode.bulkLoad(data, fillFactor);
+        while (data.hasNext() && !res.isPresent()) {
+            //1. bulk load right most child node
+            BPlusNode rightMostChildNode = getChild(children.size() - 1);
+            Optional<Pair<DataBox, Long>> optionalPair = rightMostChildNode.bulkLoad(data, fillFactor);
 
-        //2. insert key if necessary
-        if (optionalPair.isPresent()) {
-            keys.add(keys.size(), optionalPair.get().getFirst());
-            children.add(children.size(), optionalPair.get().getSecond());
+            //2. insert key if necessary
+            if (optionalPair.isPresent()) {
+                keys.add(keys.size(), optionalPair.get().getFirst());
+                children.add(children.size(), optionalPair.get().getSecond());
 
-            int maxKeyLen = metadata.getOrder() * 2;
-            //2a. inner node need split
-            if (keys.size() > maxKeyLen) {
-                //b1. build new split inner node
-                int midIdx = maxKeyLen/2;
-                InnerNode splitInnode = new InnerNode(metadata, bufferManager, keys.subList(midIdx + 1, keys.size()),
-                        children.subList(midIdx + 1, children.size()), treeContext);
+                int maxKeyLen = metadata.getOrder() * 2;
+                //2a. inner node need split
+                if (keys.size() > maxKeyLen) {
+                    //b1. build new split inner node
+                    int midIdx = maxKeyLen/2;
+                    InnerNode splitInnode = new InnerNode(metadata, bufferManager, keys.subList(midIdx + 1, keys.size()),
+                            children.subList(midIdx + 1, children.size()), treeContext);
 
-                //b2. build split key and pointer to splitInnode
-                DataBox newKey = keys.get(midIdx);
-                res = Optional.of(new Pair<>(newKey, splitInnode.page.getPageNum()));
+                    //b2. build split key and pointer to splitInnode
+                    DataBox newKey = keys.get(midIdx);
+                    res = Optional.of(new Pair<>(newKey, splitInnode.page.getPageNum()));
 
-                //b3. clear slots of this inner node. keys.get(midIdx) should be clear, children.get(midIdx) remains.
-                keys.subList(midIdx, keys.size()).clear();
-                children.subList(midIdx + 1, children.size()).clear();
+                    //b3. clear slots of this inner node. keys.get(midIdx) should be clear, children.get(midIdx) remains.
+                    keys.subList(midIdx, keys.size()).clear();
+                    children.subList(midIdx + 1, children.size()).clear();
+                }
+
+                //2b. inner node doesn't need split
+                //do nothing
             }
 
-            //2b. inner node doesn't need split
-            //do nothing
+
+            sync();
         }
-
-
-        sync();
         return res;
     }
 
